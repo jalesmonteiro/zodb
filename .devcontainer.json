@@ -8,12 +8,5 @@
           ]
       }
   },
-  "features": {
-      "ghcr.io/devcontainers/features/python:3": {
-          "version": "latest"
-      }
-  },
-  "postCreateCommand": [
-      "pip install -r requirements.txt"
-  ]
+  "postCreateCommand": "python -m pip install -r requirements.txt"
 }
