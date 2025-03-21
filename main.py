@@ -1,20 +1,58 @@
-import os
-import ZODB, ZODB.FileStorage
-
-# Certifique-se de que a pasta 'db' existe
-os.makedirs('db', exist_ok=True)
-
-# Defina o caminho do banco de dados dentro da pasta 'db'
-storage = ZODB.FileStorage.FileStorage('db/mydatabase.fs')
-
-# Inicialize o banco de dados
-db = ZODB.DB(storage)
-connection = db.open()
-root = connection.root
-
-# Exemplo: armazenar algo no banco
-root['example'] = 'Hello, ZODB!'
+import ZODB
+from ZODB.FileStorage import FileStorage
+from ZODB.DB import DB
+from persistent import Persistent
 import transaction
-transaction.commit()
+import os
 
-print("Banco de dados criado na pasta 'db'!")
+# Classe de objeto persistente
+class ExampleObject(Persistent):
+    def __init__(self, value):
+        self.value = value
+
+# Função para criar ou abrir o banco de dados
+def get_database(path):
+    if not os.path.exists('db'):
+        os.makedirs('db')
+    storage = FileStorage(os.path.join('db', path))
+    db = DB(storage)
+    connection = db.open()
+    return connection.root()
+
+# Função para adicionar um objeto ao banco de dados
+def add_object(root, key, value):
+    root[key] = ExampleObject(value)
+    transaction.commit()
+
+# Função para recuperar um objeto do banco de dados
+def get_object(root, key):
+    return root[key].value if key in root else None
+
+# Função para modificar um objeto no banco de dados
+def modify_object(root, key, new_value):
+    if key in root:
+        root[key].value = new_value
+        transaction.commit()
+
+# Função principal
+def main():
+    root = get_database('mydata.fs')
+
+    # Adicionar um objeto
+    add_object(root, 'greeting', 'Hello, ZODB!')
+    print("Objeto adicionado.")
+
+    # Recuperar o objeto
+    value = get_object(root, 'greeting')
+    print(f"Valor recuperado: {value}")
+
+    # Modificar o objeto
+    modify_object(root, 'greeting', 'Hello, Modified ZODB!')
+    print("Objeto modificado.")
+
+    # Recuperar o objeto modificado
+    value = get_object(root, 'greeting')
+    print(f"Valor modificado recuperado: {value}")
+
+if __name__ == "__main__":
+    main()
