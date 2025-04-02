@@ -1,58 +1,96 @@
-import ZODB
-from ZODB.FileStorage import FileStorage
-from ZODB.DB import DB
-from persistent import Persistent
-import transaction
+from ZODB import FileStorage, DB
+from models import ListaDeTarefas
+from transaction import commit
 import os
+import time
 
-# Classe de objeto persistente
-class ExampleObject(Persistent):
-    def __init__(self, value):
-        self.value = value
+def limpar_tela():
+    # Limpa a tela no Windows ou no Linux/MacOS
+    os.system('cls' if os.name == 'nt' else 'clear')
 
-# Função para criar ou abrir o banco de dados
-def get_database(path):
-    if not os.path.exists('db'):
-        os.makedirs('db')
-    storage = FileStorage(os.path.join('db', path))
+def main():
+    # Configuração do banco de dados
+    storage = FileStorage.FileStorage('tarefas.fs')
     db = DB(storage)
     connection = db.open()
-    return connection.root()
+    root = connection.root
 
-# Função para adicionar um objeto ao banco de dados
-def add_object(root, key, value):
-    root[key] = ExampleObject(value)
-    transaction.commit()
+    # Crie uma lista de tarefas se ela não existir
+    if not hasattr(root, 'tarefas'):
+        root.tarefas = ListaDeTarefas()
+        commit()
+    else:
+        print("Lista de tarefas já existe.")
 
-# Função para recuperar um objeto do banco de dados
-def get_object(root, key):
-    return root[key].value if key in root else None
+    # Acessa a lista de tarefas
+    lista_de_tarefas = root.tarefas
 
-# Função para modificar um objeto no banco de dados
-def modify_object(root, key, new_value):
-    if key in root:
-        root[key].value = new_value
-        transaction.commit()
+    # Exemplo de uso
+    while True:
+        # Exibir lista de tarefas
+        if not lista_de_tarefas.tarefas:
+            print("\nNão há tarefas.")
+        else:
+            print("\nTarefas:")
+            for indice, tarefa in enumerate(lista_de_tarefas.tarefas):
+                print(f"{indice}: {tarefa}")
 
-# Função principal
-def main():
-    root = get_database('mydata.fs')
+        # Exibir menu
+        print("\n1. Adicionar tarefa\n2. Remover tarefa\n3. Concluir tarefa\n4. Reabrir tarefa\n5. Sair")
+        escolha = input("Escolha uma opção: ")
 
-    # Adicionar um objeto
-    add_object(root, 'greeting', 'Hello, ZODB!')
-    print("Objeto adicionado.")
+        if escolha == '1':
+            descricao = input("Digite a descrição da tarefa: ")
+            lista_de_tarefas.adicionar_tarefa(descricao)
+            commit()
+            print("Tarefa adicionada com sucesso!")
+            time.sleep(1)  # Aguarde 1 segundo
+            limpar_tela()
 
-    # Recuperar o objeto
-    value = get_object(root, 'greeting')
-    print(f"Valor recuperado: {value}")
+        elif escolha == '2':
+            if not lista_de_tarefas.tarefas:
+                print("Não há tarefas para remover.")
+                time.sleep(1)  # Aguarde 1 segundo
+                limpar_tela()
+            else:
+                indice = int(input("\nDigite o índice da tarefa para remover: "))
+                lista_de_tarefas.remover_tarefa(indice)
+                commit()
+                print("Tarefa removida com sucesso!")
+                time.sleep(1)  # Aguarde 1 segundo
+                limpar_tela()
 
-    # Modificar o objeto
-    modify_object(root, 'greeting', 'Hello, Modified ZODB!')
-    print("Objeto modificado.")
+        elif escolha == '3':
+            if not lista_de_tarefas.tarefas:
+                print("Não há tarefas para concluir.")
+                time.sleep(1)  # Aguarde 1 segundo
+                limpar_tela()
+            else:
+                indice = int(input("\nDigite o índice da tarefa para concluir: "))
+                lista_de_tarefas.concluir_tarefa(indice)
+                commit()
+                print("Tarefa concluída com sucesso!")
+                time.sleep(1)  # Aguarde 1 segundo
+                limpar_tela()
 
-    # Recuperar o objeto modificado
-    value = get_object(root, 'greeting')
-    print(f"Valor modificado recuperado: {value}")
+        elif escolha == '4':
+            if not lista_de_tarefas.tarefas:
+                print("Não há tarefas para reabrir.")
+                time.sleep(1)  # Aguarde 1 segundo
+                limpar_tela()
+            else:
+                indice = int(input("\nDigite o índice da tarefa para reabrir: "))
+                lista_de_tarefas.reabrir_tarefa(indice)
+                commit()
+                print("Tarefa reaberta com sucesso!")
+                time.sleep(1)  # Aguarde 1 segundo
+                limpar_tela()
 
-if __name__ == "__main__":
-    main()
+        elif escolha == '5':
+            print("Saindo...")
+            break
+
+        else:
+            print("Opção inválida.")
+            time.sleep(1)  # Aguarde 1 segundo
+            limpar_tela()
